@@ -7,7 +7,7 @@
         <i class="fas fa-folder-open" />新建文件夹
       </el-button>
 
-      <el-button type="primary" plain size="medium">
+      <el-button type="primary" plain size="medium" @click="dialog2 = true">
         <i class="fas fa-share-alt" />创建分享
       </el-button>
 
@@ -31,25 +31,25 @@
       </span>
     </el-dialog>
 
-    <!-- <el-dialog
+    <el-dialog
       title="目录树"
       :visible.sync="dialog2"
       width="30%"
     >
       <el-tree
-        :data="fileTree.list"
+        ref="tree"
+        :data="nodes"
         show-checkbox
         default-expand-all
         node-key="id"
-        ref="tree"
         highlight-current
-        :props="defaultProps">
-      </el-tree>
+        :props="defaultProps"
+      />
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialog2 = false">取 消</el-button>
         <el-button type="primary" @click="handleFolderTree">确 定</el-button>
       </span>
-    </el-dialog> -->
+    </el-dialog>
 
     <!--文件列表组件-->
     <FileList :file-list="fileList" />
@@ -68,12 +68,16 @@ export default {
     return {
       file: null,
       fileList: [],
-      fileTree: null,
+      nodes: null,
       pathName: null,
       dialog1: false,
       dialog2: false,
       newFolderName: '',
-      newFolderNameError: ''
+      newFolderNameError: '',
+      defaultProps: {
+        children: 'children',
+        label: 'label'
+      }
     }
   },
   watch: {
@@ -83,12 +87,14 @@ export default {
   },
   created () {
     this.handlePathName()
+    this.getFolderTree()
   },
   mounted () {
     this.$store.subscribe((mutation, state) => {
       if (mutation.type === 'file/setRefreshFolder') {
         if (this.pathName) {
           this.getFileList()
+          this.getFolderTree()
         }
       }
     })
@@ -161,9 +167,12 @@ export default {
       this.$axios.get('/api/file/file/folder/tree')
         .then((res) => {
           if (res.data.status === 'OK') {
-            this.fileTree = res.data.map.file
+            this.nodes = res.data.map.nodes.children
           }
         })
+    },
+    handleFolderTree () {
+      this.dialog2 = false
     }
   }
 }
