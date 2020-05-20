@@ -51,14 +51,13 @@ export default {
           }
         })
         if (res.data.status === 'OK') {
-          console.log(res)
           this.$message({
             message: '登录成功',
             type: 'success'
           })
           const user = res.data.map.user
           this.$store.commit('user/setUser', user)
-          this.$router.push('/')
+          this.$router.push({ path: '/', query: { path: '/' } })
         }
       } catch (error) {}
 

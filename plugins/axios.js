@@ -5,14 +5,14 @@ export default function ({ app, redirect, $axios }) {
         redirect('/login')
       }
     } catch (error) {
-      this.$message.error('暂无权限，请先登录')
+      // app.$message.error('暂无权限，请先登录')
     }
   })
   $axios.onResponse((response) => {
     if (response.data.status === 'NOT_FOUND') {
       redirect('/404')
     } else if (response.data.status === 'INTERNAL_SERVER_ERROR') {
-      this.$message.error('系统内部出现错误')
+      // app.$message.error('系统内部出现错误')
     }
   })
 }

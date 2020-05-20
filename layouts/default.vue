@@ -1,27 +1,41 @@
 <template>
   <div>
+    <div class="header">
+      <Header />
+    </div>
     <el-container>
-      <el-header>
+      <!-- <el-header>
         <div>
           <div id="logo">
             CDTU Drive
           </div>
         </div>
         <div>右边</div>
-      </el-header>
+      </el-header> -->
       <div id="main">
         <el-aside id="aside">
-          <div v-for="item in items" :key="item.title">
-            <div :class="['menu-item', activeLink===item.link ? 'active-menu-item':'']" @click="activeLink = item.link">
-              <span><i :class="item.icon" />{{ item.title }}</span>
+          <div class="nav">
+            <div v-for="item in items" :key="item.title">
+              <nuxt-link :to="item.link">
+                <div :class="['menu-item', activeLink===item.link ? 'active-menu-item':'']" @click="activeLink = item.link">
+                  <span><i :class="item.icon" />{{ item.title }}</span>
+                </div>
+              </nuxt-link>
+              <nuxt-link v-for="subItem in item.subItems" :key="subItem.title" :to="subItem.link">
+                <div
+                  :class="['sub-menu-item', activeLink===subItem.link ? 'active-menu-item':'']"
+                  @click="activeLink = subItem.link"
+                >
+                  <span>{{ subItem.title }}</span>
+                </div>
+              </nuxt-link>
             </div>
-            <div
-              v-for="subItem in item.subItems"
-              :key="subItem.title"
-              :class="['sub-menu-item', activeLink===subItem.link ? 'active-menu-item':'']"
-              @click="activeLink = subItem.link"
-            >
-              <span>{{ subItem.title }}</span>
+          </div>
+          <div class="space">
+            <el-progress :percentage="percentage" :format="format" />
+            <div class="space-details">
+              <span>{{ uss }} / {{ tss }}</span>
+              <span><a href="#">扩容申请</a></span>
             </div>
           </div>
         </el-aside>
@@ -34,22 +48,26 @@
 </template>
 
 <script>
+import Header from '~/components/Header'
 export default {
+  components: {
+    Header
+  },
   data () {
     return {
       items: [
         {
           title: '全部文件',
           icon: 'fas fa-file-alt',
-          link: '/filelist',
+          link: '/',
           subItems: [
             {
               title: '图片',
-              link: '/file/picture'
+              link: '/file/image'
             },
             {
               title: '文档',
-              link: '/file/docs'
+              link: '/file/doc'
             },
             {
               title: '视频',
@@ -57,24 +75,83 @@ export default {
             },
             {
               title: '音乐',
-              link: '/file/music'
+              link: '/file/audio'
             }
           ]
         },
         {
           title: '我的分享',
           icon: 'fas fa-share-alt',
-          link: 'share',
+          link: '/share',
+          subItems: []
+        },
+        {
+          title: '我的共享',
+          icon: 'fas fa-users',
+          link: '/group',
           subItems: []
         },
         {
           title: '回收站',
           icon: 'fas fa-trash-alt',
-          link: 'trash',
+          link: '/file/trash',
           subItems: []
         }
       ],
-      activeLink: ''
+      activeLink: '',
+      percentage: 0,
+      user: { uss: 0, tss: 0 }
+    }
+  },
+  computed: {
+    tss () {
+      const value = this.user.tss / (1024 * 1024 * 1024)
+      return value.toFixed(2) + 'GB'
+    },
+    uss () {
+      const K = 1024
+      const M = K * 1024
+      const G = M * 1024
+      const size = this.user.uss
+      if (size < K) {
+        return size + 'B'
+      } else if (size >= K && size < M) {
+        return Math.round(size / K * 100) / 100 + 'KB'
+      } else if (size >= M && size < G) {
+        return Math.round(size / M * 100) / 100 + 'MB'
+      } else {
+        return Math.round(size / G * 100) / 100 + 'GB'
+      }
+    }
+  },
+  mounted () {
+    const user = this.$store.getters['user/getUser']
+    this.user = user
+    if (user) {
+      this.user = user
+      this.percentage = Math.ceil((user.uss / user.tss) * 100)
+    }
+    this.$store.subscribe((mutation) => {
+      if (mutation.type === 'file/setUpload') {
+        this.getUser()
+      }
+    })
+  },
+  methods: {
+    format (percentage) {
+      return percentage === 100 ? '满' : `${percentage}%`
+    },
+    getUser () {
+      this.$axios.get('/api/user', {
+        params: {
+          id: this.user.id
+        }
+      }).then((res) => {
+        if (res.data.status === 'OK') {
+          this.user = res.data.map.user
+          this.$store.commit('user/setUser', this.user)
+        }
+      })
     }
   }
 }
@@ -85,25 +162,11 @@ export default {
   $aside-width: 15%;
   $menu-item-height: 38px;
   $main-header-height: 100px;
-  .el-header{
-    background-color: #fff;
-    color: #000;
-    text-align: center;
-    height: $header-height !important;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #ccc;
-    position: fixed;
-    top: 0;
-    width: 100%;
-    z-index: 12;
-    #logo {
-      font-size: 30px;
-      font-weight: bolder;
-    }
+  .header {
+    height: $header-height;
   }
   #main {
+    width: 100%;
     #aside {
       width: $aside-width !important;
       background-color: #f7f7f7;
@@ -113,6 +176,13 @@ export default {
       left: 0;
       font-size: 14px;
       z-index: 12;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      a {
+        text-decoration: none;
+        color: #000;
+      }
       .menu-item, .sub-menu-item {
         height: $menu-item-height;
         line-height: $menu-item-height;
@@ -135,12 +205,30 @@ export default {
       .active-menu-item {
         color: deepskyblue;
       }
+      .space {
+        height: 100px;
+        padding: 0 10px;
+        // display: flex;
+        // align-items: center;
+        .space-details {
+          margin-top: 10px;
+          display: flex;
+          justify-content: space-between;
+          .el-progress__text {
+            text-align: right;
+          }
+          a {
+            text-decoration: none;
+            color: #409eff;
+          }
+        }
+      }
     }
     .el-main {
       width: 100% - $aside-width !important;
       padding: 0;
       position: relative;
-      top: $header-height;
+      // top: $header-height;
       left: $aside-width;
     }
   }
