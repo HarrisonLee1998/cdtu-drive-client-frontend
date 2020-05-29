@@ -21,10 +21,49 @@
           class="file-list-item-checkbox"
           @change="checkAllSelected"
         />
-        <FileListItem :file="file" class="file-list-item" @toggleSelected="toggleSelected" />
+        <FileListItem
+          :file="file"
+          class="file-list-item"
+          @toggleSelected="toggleSelected"
+          @showMenu="showMenu"
+        />
       </div>
       <div v-show="fileList.length === 0 " class="empty-list">
         <div>当前文件夹下没有文件</div>
+      </div>
+    </div>
+    <div ref="contextMenu" class="context-menu">
+      <div class="menu-item-group">
+        <div class="menu-item">
+          打开
+        </div>
+        <div class="menu-item">
+          下载
+        </div>
+      </div>
+      <div class="menu-item-group">
+        <div class="menu-item">
+          分享
+        </div>
+        <div class="menu-item">
+          共享
+        </div>
+      </div>
+      <div class="menu-item-group">
+        <div class="menu-item">
+          复制到
+        </div>
+        <div class="menu-item">
+          移动到
+        </div>
+      </div>
+      <div class="menu-item-group">
+        <div class="menu-item">
+          删除
+        </div>
+        <div class="menu-item">
+          重命名
+        </div>
       </div>
     </div>
   </div>
@@ -46,7 +85,9 @@ export default {
     return {
       selected: [],
       allSelected: false,
-      pathName: null
+      pathName: null,
+      clickFile: {},
+      clickFileEle: null
     }
   },
   computed: {
@@ -99,6 +140,29 @@ export default {
           return true
         }
       })
+    },
+    showMenu (e, file) {
+      this.clickFile = file
+      const x = e.clientX
+      const y = e.clientY
+      const menu = this.$refs.contextMenu
+      this.clickFileEle = e.path[1]
+      this.clickFileEle.setAttribute('id', 'clickFileEle')
+      menu.style.display = 'block'
+      menu.style.position = 'fixed'
+      menu.style.top = y + 'px'
+      menu.style.left = x + 'px'
+      window.addEventListener('mousewheel', this.hiddenMenu)
+      window.addEventListener('click', this.hiddenMenu)
+    },
+    hiddenMenu () {
+      if (this.clickFileEle) {
+        this.clickFileEle.removeAttribute('id')
+      }
+      const menu = this.$refs.contextMenu
+      menu.style.display = 'none'
+      window.removeEventListener('mousewheel', this.hiddenMenu)
+      window.removeEventListener('click', this.hiddenMenu)
     }
   }
 }
@@ -139,6 +203,37 @@ $file-height: 44px;
   content: '>';
   margin: 5px;
 }
+.context-menu {
+  display: none;
+  z-index: 100;
+  min-width:100px;
+  min-height:200px;
+  background:#fff;
+  box-shadow:#ccc 0px 0px 10px;//将h-shadow,v-shadow设为0px,实现四周阴影
+  border-radius: 5px;
+  .menu-item-group:not(:last-child) {
+    border-bottom: 1px solid #ccc;
+  }
+  .menu-item {
+    height: 30px;
+    line-height: 30px;
+    font-size: 14px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0 5px;
+    margin-bottom: 5px 0;
+  }
+  .menu-item:hover {
+    background-color: #036598;
+    color: #fff;
+  }
+  .menu-item-group::first-child > .menu-item:first-child {
+    border-radius: 5px 5px 0 0;
+  }
+  .menu-item-group::last-child > .menu-item:last-child {
+    border-radius: 0 0 5px 5px;
+  }
+}
 </style>
 
 <style lang="scss">
@@ -150,5 +245,8 @@ $file-height: 44px;
   }
   .file-list-item-date {
     width: 15%;
+  }
+  #clickFileEle {
+    background-color: azure;
   }
 </style>

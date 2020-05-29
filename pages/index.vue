@@ -39,11 +39,12 @@
       <el-tree
         ref="tree"
         :data="nodes"
-        show-checkbox
-        default-expand-all
         node-key="id"
         highlight-current
         :props="defaultProps"
+        accordion
+        icon-class="far fa-plus-square"
+        @node-click="handleNodeClick"
       />
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialog2 = false">取 消</el-button>
@@ -173,6 +174,9 @@ export default {
     },
     handleFolderTree () {
       this.dialog2 = false
+    },
+    handleNodeClick (obj) {
+      console.log(obj)
     }
   }
 }
