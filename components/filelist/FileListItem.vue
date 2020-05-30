@@ -80,7 +80,7 @@ export default {
   },
   methods: {
     selectFile () {
-      this.$emit('toggleSelected', this.file)
+      // this.$emit('toggleSelected', this.file)
     },
     showMenu (e) {
       this.$emit('showMenu', e, this.file)

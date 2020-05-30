@@ -1,14 +1,37 @@
 <template>
   <div>
-    <div class="path-tree">
+    <!--按钮区-->
+    <div class="btns">
+      <Uploader v-if="opts.upload" />
+      <el-button
+        v-if="opts.folder"
+        type="primary"
+        plain
+        size="medium"
+        @click="dialog.newFolderDialog = true"
+      >
+        <i class="fas fa-folder-open" />新建文件夹
+      </el-button>
+
+      <el-button type="primary" plain size="medium" @click="dialog.folderTreeDialog = true">
+        <i class="fas fa-share-alt" />创建分享
+      </el-button>
+
+      <el-button type="primary" plain size="medium">
+        <i class="fas fa-users" />创建共享
+      </el-button>
+    </div>
+    <!--文件夹目录信息-->
+    <div class="path-line">
       <span class="path"><nuxt-link :to="'/?path=' + encodeURI('/')">全部文件</nuxt-link></span>
       <span v-for="(path) in paths" :key="path.path" class="path">
         <nuxt-link :to="'/?path=' + encodeURI(path.path)">{{ path.name }}</nuxt-link>
       </span>
     </div>
+    <!--文件列表-->
     <div class="file-list">
       <div class="file-wrapper">
-        <el-checkbox v-model="allSelected" class="file-list-item-checkbox" @change="selectAll" />
+        <el-checkbox v-model="allSelected" class="file-list-item-checkbox" />
         <div class="file-list-item">
           <span class="file-list-item-title header-field">文件名</span>
           <span class="file-list-item-size header-field">大小</span>
@@ -17,10 +40,11 @@
       </div>
       <div v-for="(file, i) in fileList" :key="i" class="file-wrapper">
         <el-checkbox
-          v-model="file.selected"
+          v-model="selected[i]"
           class="file-list-item-checkbox"
           @change="checkAllSelected"
         />
+        <!-- @change="checkAllSelected" -->
         <FileListItem
           :file="file"
           class="file-list-item"
@@ -32,6 +56,7 @@
         <div>当前文件夹下没有文件</div>
       </div>
     </div>
+    <!--右键菜单-->
     <div ref="contextMenu" class="context-menu">
       <div class="menu-item-group">
         <div class="menu-item">
@@ -61,24 +86,95 @@
         <div class="menu-item">
           删除
         </div>
-        <div class="menu-item">
+        <div class="menu-item" @click="renameFile">
           重命名
         </div>
       </div>
+    </div>
+    <!-- 对话框 -->
+    <div class="newFolderDialog">
+      <el-dialog
+        title="请输入新文件夹的名称"
+        :visible.sync="dialog.newFolderDialog"
+        width="30%"
+      >
+        <el-input v-model="newFolderName" />
+        <div v-show="newFolderNameError.trim()!==''">
+          {{ newFolderNameError }}
+        </div>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="dialog.newFolderDialog = false">取 消</el-button>
+          <el-button type="primary" @click="beforeNewFolder">确 定</el-button>
+        </span>
+      </el-dialog>
+
+      <el-dialog
+        title="目录树"
+        :visible.sync="dialog.folderTreeDialog"
+        width="40%"
+      >
+        <el-tree
+          ref="tree"
+          :data="nodes"
+          node-key="id"
+          highlight-current
+          :props="defaultProps"
+          accordion
+          icon-class="far fa-plus-square"
+          @node-click="handleNodeClick"
+        />
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="dialog.folderTreeDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleFolderTree">确 定</el-button>
+        </span>
+      </el-dialog>
+
+      <el-dialog
+        title="重命名文件"
+        :visible.sync="dialog.renameFileDialog"
+        width="30%"
+      >
+        <el-input v-model="renameFileName" />
+        <div v-show="renameFileError.trim()!==''">
+          {{ renameFileError }}
+        </div>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="dialog.renameFileDialog = false">取 消</el-button>
+          <el-button type="primary" @click="rename">确 定</el-button>
+        </span>
+      </el-dialog>
     </div>
   </div>
 </template>
 
 <script>
 import FileListItem from './FileListItem'
+import Uploader from '~/components/file/Upload'
 export default {
   components: {
-    FileListItem
+    FileListItem,
+    Uploader
   },
   props: {
     fileList: {
       type: Array,
       required: true
+    },
+    nodes: {
+      type: Array,
+      required: true
+    },
+    opts: {
+      type: Object,
+      default: () => {
+        return {
+          upload: false,
+          folder: false,
+          share: false,
+          group: false,
+          guType: 0
+        }
+      }
     }
   },
   data () {
@@ -87,7 +183,20 @@ export default {
       allSelected: false,
       pathName: null,
       clickFile: {},
-      clickFileEle: null
+      clickFileEle: null,
+      dialog: {
+        newFolderDialog: false,
+        folderTreeDialog: false,
+        renameFileDialog: false
+      },
+      defaultProps: {
+        children: 'children',
+        label: 'label'
+      },
+      newFolderName: '',
+      newFolderNameError: '',
+      renameFileName: '',
+      renameFileError: ''
     }
   },
   computed: {
@@ -108,24 +217,24 @@ export default {
   },
   watch: {
     fileList () {
-      this.initSelect(false)
+      this.initSelect()
+    },
+    allSelected () {
+      if (this.allSelected) {
+        this.initSelect()
+      }
     }
   },
-  created () {
-  },
   methods: {
-    initSelect (flag) {
-      this.fileList.forEach((file) => {
-        file.selected = flag
-      })
-    },
-    selectAll (selected) {
-      this.initSelect(selected)
+    initSelect () {
+      for (let i = 0; i < this.fileList.length; ++i) {
+        this.selected[i] = this.allSelected
+      }
     },
     checkAllSelected () {
       let flag = true
-      for (let i = 0; i < this.fileList.length; ++i) {
-        if (!this.fileList[i].selected) {
+      for (let i = 0; i < this.selected.length; ++i) {
+        if (!this.selected[i]) {
           flag = false
           break
         }
@@ -142,6 +251,7 @@ export default {
       })
     },
     showMenu (e, file) {
+      this.hiddenMenu()
       this.clickFile = file
       const x = e.clientX
       const y = e.clientY
@@ -163,6 +273,79 @@ export default {
       menu.style.display = 'none'
       window.removeEventListener('mousewheel', this.hiddenMenu)
       window.removeEventListener('click', this.hiddenMenu)
+    },
+    beforeNewFolder () {
+      this.newFolderName = this.newFolderName.trim()
+      const isValid = this.checkFileName(this.newFolderName, 'newFolderNameError')
+      if (isValid) {
+        this.newFolderNameError = ''
+        this.dialog.newFolderDialog = false
+        this.newFolder()
+      }
+    },
+    newFolder () {
+      const fileUser = new FormData()
+      const currentFolder = this.$store.getters['file/getFile']
+      fileUser.append('fName', this.newFolderName)
+      fileUser.append('fPid', currentFolder.id)
+      this.$axios.post('/api/file/folder', fileUser)
+        .then((res) => {
+          if (res.data.status === 'OK') {
+            this.$message.success('添加成功')
+            this.$store.commit('file/setRefreshFolder', new Date())
+          } else {
+            this.$message.error('添加失败')
+          }
+        }).catch(() => {
+          this.$message.error('添加失败')
+        })
+    },
+    handleFolderTree () {
+      this.dialog.folderTreeDialog = false
+    },
+    handleNodeClick (obj) {
+      console.log(obj)
+    },
+    renameFile () {
+      this.renameFileName = this.clickFile.fname
+      this.dialog.renameFileDialog = true
+    },
+    rename () {
+      this.renameFileName = this.renameFileName.trim()
+      const isValid = this.checkFileName(this.renameFileName, 'renameFileError')
+      if (isValid) {
+        this.dialog.renameFileDialog = false
+        this.$axios.patch('/api/file/rename', {
+          id: this.clickFile.id,
+          name: this.renameFileName
+        }).then((res) => {
+          if (res.data.status === 'OK') {
+            this.$message.success('修改成功')
+            this.$store.commit('file/setRefreshFolder', new Date())
+          } else {
+            this.$message.error('修改失败')
+          }
+        })
+      }
+    },
+    checkFileName (name, errorAttr) {
+      if (name === '') {
+        this.newFolderNameError = '名称不能为空'
+        return false
+      }
+      const reg = new RegExp('/')
+      if (reg.test(name)) {
+        this.newFolderNameError = '文件夹名称不能包含字符\'/\''
+        return false
+      }
+      const list = this.fileList
+      for (let i = 0; i < list.length; ++i) {
+        if (list[i].fname === this.newFolderName) {
+          this[errorAttr] = '当前目录下已存在该文件夹'
+          return false
+        }
+      }
+      return true
     }
   }
 }
@@ -233,6 +416,14 @@ $file-height: 44px;
   .menu-item-group::last-child > .menu-item:last-child {
     border-radius: 0 0 5px 5px;
   }
+}
+
+.btns {
+  display: flex;
+  margin-bottom: 10px;
+}
+.btns:not(:last-child) {
+  margin-right: 10%;
 }
 </style>
 

@@ -281,7 +281,7 @@ export default {
       chunk.append('totalSize', file.size)
       chunk.append('mime', file.type)
       chunk.append('type', this.getType(file))
-      this.$axios.post('/api/file/file/user', chunk).then((res) => {
+      this.$axios.post('/api/file/user', chunk).then((res) => {
         if (res.data.status === 'OK') {
           this.updateObject(file, 'percentage', 100)
           this.updateObject(file, 'status', 'success')
