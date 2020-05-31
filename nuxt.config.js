@@ -32,8 +32,8 @@ export default {
    */
   css: [
     'element-ui/lib/theme-chalk/index.css',
-    '@/assets/css/main.css',
-    '@/assets/css/scrollbar.css'
+    '@/assets/css/main.css'
+    // '@/assets/css/scrollbar.css'
   ],
   /*
    ** Plugins to load before mounting the App
