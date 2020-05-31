@@ -13,12 +13,12 @@
         <i class="fas fa-folder-open" />新建文件夹
       </el-button>
 
-      <el-button v-if="opts.share" type="primary" plain size="medium" @click="dialog.folderTreeDialog = true">
+      <el-button v-if="opts.share" type="primary" plain size="medium" @click="dialog.shareDialog = true">
         <i class="fas fa-share-alt" />创建分享
       </el-button>
 
       <el-button v-if="opts.group" type="primary" plain size="medium">
-        <i class="fas fa-users" />创建共享
+        <i class="fas fa-users" />添加到共享
       </el-button>
       <el-button type="primary" plain size="medium" @click="handleRecycle(1)">
         <i class="fas fa-recycle" />
@@ -158,12 +158,55 @@
         title="提示"
         :visible.sync="dialog.deleteDialog"
         width="30%"
-        :before-close="handleClose"
       >
         <span>是否确认删除</span>
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialog.deleteDialog = false">取 消</el-button>
           <el-button type="primary" @click="deleteFile">确 定</el-button>
+        </span>
+      </el-dialog>
+
+      <el-dialog
+        title="创建分享"
+        :visible.sync="dialog.shareDialog"
+        width="230px"
+      >
+        <div>
+          <span>选择有效期</span>
+          <el-select v-model="shareExpireDays" placeholder="选择有效期">
+            <el-option
+              v-for="item in expireOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </div>
+        <div>
+          <el-checkbox v-model="needPwd">
+            设置口令
+          </el-checkbox>
+        </div>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="dialog.shareDialog = false">取 消</el-button>
+          <el-button type="primary" @click="createShare">确 定</el-button>
+        </span>
+      </el-dialog>
+
+      <el-dialog
+        title="分享信息"
+        :visible.sync="dialog.shareInfoDialog"
+        width="30%"
+      >
+        <div>
+          <span>链接：</span><el-input v-model="shareInfo.link" readonly />
+        </div>
+        <div>
+          <span>口令：{{ shareInfo.pwd }}</span>
+        </div>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="dialog.shareInfoDialog = false">取 消</el-button>
+          <el-button type="primary" @click="copyShareInfo">复制分享信息</el-button>
         </span>
       </el-dialog>
     </div>
@@ -212,7 +255,9 @@ export default {
         newFolderDialog: false,
         folderTreeDialog: false,
         renameFileDialog: false,
-        deleteDialog: false
+        deleteDialog: false,
+        shareDialog: false,
+        shareInfoDialog: false
       },
       defaultProps: {
         children: 'children',
@@ -223,7 +268,28 @@ export default {
       renameFileName: '',
       renameFileError: '',
       mode: -1,
-      targetFile: null
+      targetFile: null,
+      expireOptions: [
+        {
+          value: 1,
+          label: '1天'
+        },
+        {
+          value: 7,
+          label: '7天'
+        },
+        {
+          value: 30,
+          label: '30天'
+        },
+        {
+          value: -1,
+          label: '永久'
+        }
+      ],
+      shareExpireDays: 1,
+      needPwd: true,
+      shareInfo: {}
     }
   },
   computed: {
@@ -492,6 +558,26 @@ export default {
         })
       }
     },
+    /* 创建分享 */
+    createShare () {
+      this.dialog.shareDialog = false
+      const ids = this.getIds()
+      if (ids.length > 0) {
+        this.$axios.post('/api/share', {
+          ids,
+          days: this.shareExpireDays,
+          needPwd: this.needPwd
+        }).then((res) => {
+          if (res.data.status === 'OK') {
+            this.$message.success('分享创建成功')
+            this.shareInfo = res.data.map.share
+            this.dialog.shareInfoDialog = true
+          } else {
+            this.$message.error('分享创建失败')
+          }
+        })
+      }
+    },
     getIds () {
       const ids = []
       for (let i = 0; i < this.selected.length; ++i) {
@@ -503,6 +589,9 @@ export default {
         this.$message.error('请选选择所要处理的文件')
       }
       return ids
+    },
+    copyShareInfo () {
+      this.$message.info('分享信息已复制到剪切板')
     }
   }
 }

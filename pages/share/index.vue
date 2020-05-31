@@ -1,5 +1,5 @@
 <template>
   <div>
-    分享
+    我的分享
   </div>
 </template>
