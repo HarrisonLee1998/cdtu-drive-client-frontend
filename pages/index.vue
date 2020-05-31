@@ -80,7 +80,8 @@ export default {
       this.$axios.get('/api/file/folder/tree')
         .then((res) => {
           if (res.data.status === 'OK') {
-            this.nodes = res.data.map.nodes.children
+            this.nodes = []
+            this.nodes.push(res.data.map.nodes)
           }
         })
     }

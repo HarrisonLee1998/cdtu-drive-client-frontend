@@ -7,9 +7,10 @@
     >
       <div v-if="file.isFolder" class="file-list-item-title">
         <i v-if="file.isFolder" class="fas fa-folder file-icon folder-icon" />
-        <nuxt-link :to="'/?path=' + encodeURI(file.fpath)">
+        <nuxt-link v-if="file.isDelete===0" :to="'/?path=' + encodeURI(file.fpath)">
           <span class="file-name">{{ file.fname }}</span>
         </nuxt-link>
+        <span v-else class="file-name">{{ file.fname }}</span>
       </div>
       <div v-else class="file-list-item-title">
         <i :class="[iconClass, 'file-icon']" />

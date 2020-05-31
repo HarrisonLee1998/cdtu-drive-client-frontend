@@ -13,16 +13,24 @@
         <i class="fas fa-folder-open" />新建文件夹
       </el-button>
 
-      <el-button type="primary" plain size="medium" @click="dialog.folderTreeDialog = true">
+      <el-button v-if="opts.share" type="primary" plain size="medium" @click="dialog.folderTreeDialog = true">
         <i class="fas fa-share-alt" />创建分享
       </el-button>
 
-      <el-button type="primary" plain size="medium">
+      <el-button v-if="opts.group" type="primary" plain size="medium">
         <i class="fas fa-users" />创建共享
+      </el-button>
+      <el-button type="primary" plain size="medium" @click="handleRecycle(1)">
+        <i class="fas fa-recycle" />
+        <span v-if="opts.trash">移除回收站</span>
+        <span v-else>加入回收站</span>
+      </el-button>
+      <el-button v-if="opts.trash" type="primary" plain size="medium" @click="dialog.deleteDialog = true">
+        <i class="fas fa-trash-alt" />永久删除
       </el-button>
     </div>
     <!--文件夹目录信息-->
-    <div class="path-line">
+    <div v-if="!opts.trash" class="path-line">
       <span class="path"><nuxt-link :to="'/?path=' + encodeURI('/')">全部文件</nuxt-link></span>
       <span v-for="(path) in paths" :key="path.path" class="path">
         <nuxt-link :to="'/?path=' + encodeURI(path.path)">{{ path.name }}</nuxt-link>
@@ -66,25 +74,27 @@
           下载
         </div>
       </div>
-      <div class="menu-item-group">
+      <!-- <div class="menu-item-group">
         <div class="menu-item">
           分享
         </div>
         <div class="menu-item">
           共享
         </div>
-      </div>
+      </div> -->
       <div class="menu-item-group">
-        <div class="menu-item">
+        <!--复制到的模式定义为0， 移动到的模式定义为1-->
+        <div class="menu-item" @click="shwoFolderTree(0)">
           复制到
         </div>
-        <div class="menu-item">
+        <div class="menu-item" @click="shwoFolderTree(1)">
           移动到
         </div>
       </div>
       <div class="menu-item-group">
-        <div class="menu-item">
-          删除
+        <div class="menu-item" @click="handleRecycle(0)">
+          <span v-if="clickFile.isDelete === 0">加入</span>
+          <span v-else>移除</span> 回收站
         </div>
         <div class="menu-item" @click="renameFile">
           重命名
@@ -125,7 +135,7 @@
         />
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialog.folderTreeDialog = false">取 消</el-button>
-          <el-button type="primary" @click="handleFolderTree">确 定</el-button>
+          <el-button type="primary" @click="selectFolderTreeFile">确 定</el-button>
         </span>
       </el-dialog>
 
@@ -141,6 +151,19 @@
         <span slot="footer" class="dialog-footer">
           <el-button @click="dialog.renameFileDialog = false">取 消</el-button>
           <el-button type="primary" @click="rename">确 定</el-button>
+        </span>
+      </el-dialog>
+
+      <el-dialog
+        title="提示"
+        :visible.sync="dialog.deleteDialog"
+        width="30%"
+        :before-close="handleClose"
+      >
+        <span>是否确认删除</span>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="dialog.deleteDialog = false">取 消</el-button>
+          <el-button type="primary" @click="deleteFile">确 定</el-button>
         </span>
       </el-dialog>
     </div>
@@ -172,7 +195,8 @@ export default {
           folder: false,
           share: false,
           group: false,
-          guType: 0
+          guType: 0,
+          trash: false
         }
       }
     }
@@ -187,7 +211,8 @@ export default {
       dialog: {
         newFolderDialog: false,
         folderTreeDialog: false,
-        renameFileDialog: false
+        renameFileDialog: false,
+        deleteDialog: false
       },
       defaultProps: {
         children: 'children',
@@ -196,22 +221,26 @@ export default {
       newFolderName: '',
       newFolderNameError: '',
       renameFileName: '',
-      renameFileError: ''
+      renameFileError: '',
+      mode: -1,
+      targetFile: null
     }
   },
   computed: {
     paths () {
       const data = []
       const path = this.$route.query.path
-      const paths = path.split('/').filter(f => f.trim() !== '')
-      let temp = ''
-      paths.forEach((p) => {
-        const obj = {}
-        obj.name = p
-        temp += '/' + p
-        obj.path = temp
-        data.push(obj)
-      })
+      if (path) {
+        const paths = path.split('/').filter(f => f.trim() !== '')
+        let temp = ''
+        paths.forEach((p) => {
+          const obj = {}
+          obj.name = p
+          temp += '/' + p
+          obj.path = temp
+          data.push(obj)
+        })
+      }
       return data
     }
   },
@@ -220,27 +249,28 @@ export default {
       this.initSelect()
     },
     allSelected () {
-      if (this.allSelected) {
-        this.initSelect()
-      }
+      this.initSelect()
     }
   },
   methods: {
+    /* 初始化勾选 */
     initSelect () {
       for (let i = 0; i < this.fileList.length; ++i) {
         this.selected[i] = this.allSelected
       }
     },
+    /* 检查是否所有被勾选 */
     checkAllSelected () {
-      let flag = true
-      for (let i = 0; i < this.selected.length; ++i) {
-        if (!this.selected[i]) {
-          flag = false
-          break
-        }
-      }
-      this.allSelected = flag
+      // let flag = true
+      // for (let i = 0; i < this.selected.length; ++i) {
+      //   if (!this.selected[i]) {
+      //     flag = false
+      //     break
+      //   }
+      // }
+      // this.allSelected = flag
     },
+    /* 切换勾选 */
     toggleSelected (file) {
       this.fileList.forEach((f) => {
         if (file.id === f.id) {
@@ -250,7 +280,11 @@ export default {
         }
       })
     },
+    /* 显示菜单并定义相关事件 */
     showMenu (e, file) {
+      if (this.opts.trash) {
+        return
+      }
       this.hiddenMenu()
       this.clickFile = file
       const x = e.clientX
@@ -265,6 +299,7 @@ export default {
       window.addEventListener('mousewheel', this.hiddenMenu)
       window.addEventListener('click', this.hiddenMenu)
     },
+    /* 隐藏菜单，并关闭某些事件 */
     hiddenMenu () {
       if (this.clickFileEle) {
         this.clickFileEle.removeAttribute('id')
@@ -274,6 +309,7 @@ export default {
       window.removeEventListener('mousewheel', this.hiddenMenu)
       window.removeEventListener('click', this.hiddenMenu)
     },
+    /* 新建文件夹前，检验名称是否合理 */
     beforeNewFolder () {
       this.newFolderName = this.newFolderName.trim()
       const isValid = this.checkFileName(this.newFolderName, 'newFolderNameError')
@@ -283,6 +319,7 @@ export default {
         this.newFolder()
       }
     },
+    /* 发送新建文件夹请求 */
     newFolder () {
       const fileUser = new FormData()
       const currentFolder = this.$store.getters['file/getFile']
@@ -300,16 +337,12 @@ export default {
           this.$message.error('添加失败')
         })
     },
-    handleFolderTree () {
-      this.dialog.folderTreeDialog = false
-    },
-    handleNodeClick (obj) {
-      console.log(obj)
-    },
+    /* 打开重命名窗口 */
     renameFile () {
       this.renameFileName = this.clickFile.fname
       this.dialog.renameFileDialog = true
     },
+    /* 发送重命名请求 */
     rename () {
       this.renameFileName = this.renameFileName.trim()
       const isValid = this.checkFileName(this.renameFileName, 'renameFileError')
@@ -328,6 +361,7 @@ export default {
         })
       }
     },
+    /* 检查文件名是否合法 */
     checkFileName (name, errorAttr) {
       if (name === '') {
         this.newFolderNameError = '名称不能为空'
@@ -346,6 +380,129 @@ export default {
         }
       }
       return true
+    },
+    /* 显示目录树 */
+    shwoFolderTree (mode) {
+      this.targetFile = null
+      this.mode = mode
+      this.dialog.folderTreeDialog = true
+    },
+    /* 处理目录树选择 */
+    handleNodeClick (obj) {
+      this.targetFile = obj
+    },
+    /* 处理目录树选择后进行事件分发 */
+    selectFolderTreeFile () {
+      this.dialog.folderTreeDialog = false
+      if (this.mode === 0) {
+        // 复制到
+        this.copy()
+      } else {
+        // 移动到
+        this.move()
+      }
+    },
+    /* 发送复制文件的请求 */
+    copy () {
+      const isValid = this.checkTargetFile()
+      if (isValid) {
+        this.$axios.patch('/api/file/copy', {
+          src: this.clickFile.id,
+          desc: this.targetFile.id
+        }).then((res) => {
+          if (res.data.status === 'OK') {
+            this.$message.success('复制成功')
+            this.$store.commit('file/setRefreshFolder', new Date())
+          } else {
+            this.$message.error('复制失败')
+          }
+        })
+      }
+    },
+    /* 发送移动文件的请求 */
+    move () {
+      const isValid = this.checkTargetFile()
+      if (isValid) {
+        this.$axios.patch('/api/file/move', {
+          src: this.clickFile.id,
+          desc: this.targetFile.id
+        }).then((res) => {
+          if (res.data.status === 'OK') {
+            this.$message.success('移动成功')
+            this.$store.commit('file/setRefreshFolder', new Date())
+          } else {
+            this.$message.error('移动失败')
+          }
+        })
+      }
+    },
+    /* 检查目标文件 */
+    checkTargetFile () {
+      if (!this.clickFile) {
+        this.$message.error('请先选择源目录')
+        return false
+      }
+      if (!this.targetFile) {
+        this.$message.error('请先选择目标目录')
+        return false
+      }
+      const src = this.clickFile.id
+      const desc = this.targetFile.id
+      if (src === desc) {
+        this.$message.error('源目录和目标目录不能为同一个目录')
+        return false
+      }
+      return true
+    },
+    handleRecycle (flag) {
+      let ids = []
+      if (flag === 0) {
+        ids.push(this.clickFile.id)
+      } else {
+        ids = this.getIds()
+      }
+      if (ids.length > 0) {
+        this.$axios.patch('/api/file/recycle', {
+          ids,
+          flag: this.opts.trash ? 0 : 1
+        })
+          .then((res) => {
+            if (res.data.status === 'OK') {
+              this.$message.success('操作成功')
+              this.$store.commit('file/setRefreshFolder', new Date())
+            } else {
+              this.$message.error('操作失败')
+            }
+          })
+      }
+    },
+    deleteFile () {
+      this.dialog.deleteDialog = false
+      const ids = this.getIds()
+      if (ids.length > 0) {
+        this.$axios.post('/api/file/deletion', {
+          ids
+        }).then((res) => {
+          if (res.data.status === 'OK') {
+            this.$message.success('删除成功')
+            this.$store.commit('file/setRefreshFolder', new Date())
+          } else {
+            this.$message.error('删除失败')
+          }
+        })
+      }
+    },
+    getIds () {
+      const ids = []
+      for (let i = 0; i < this.selected.length; ++i) {
+        if (this.selected[i]) {
+          ids.push(this.fileList[i].id)
+        }
+      }
+      if (ids.length === 0) {
+        this.$message.error('请选选择所要处理的文件')
+      }
+      return ids
     }
   }
 }
@@ -390,7 +547,6 @@ $file-height: 44px;
   display: none;
   z-index: 100;
   min-width:100px;
-  min-height:200px;
   background:#fff;
   box-shadow:#ccc 0px 0px 10px;//将h-shadow,v-shadow设为0px,实现四周阴影
   border-radius: 5px;
@@ -430,6 +586,10 @@ $file-height: 44px;
 <style lang="scss">
   .file-list-item-title {
     width: 70%;
+    a {
+      color: #000;
+      text-decoration: none;
+    }
   }
   .file-list-item-size{
     width: 15%;
