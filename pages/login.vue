@@ -41,6 +41,9 @@ export default {
   },
   methods: {
     async login () {
+      if (!this.checkLogin()) {
+        return
+      }
       try {
         const res = await this.$axios({
           url: '/api/login',
@@ -77,6 +80,16 @@ export default {
       //     this.error = '登录信息有误'
       //   }
       // })
+    },
+    checkLogin () {
+      this.id = this.id.trim()
+      this.password = this.password.trim()
+      if (this.id === '' || this.password === '') {
+        this.$message.error('请输入正确的用户名和密码')
+        return false
+      } else {
+        return true
+      }
     }
   }
 }

@@ -129,7 +129,7 @@ export default {
       this.pageInfo = pageInfo
     },
     go (id) {
-      const url = encodeURI(`/share/details?sid=${id}&path=\\`)
+      const url = encodeURI(`/share/details?sid=${id}&path=/`)
       this.$router.push(url)
     }
   }

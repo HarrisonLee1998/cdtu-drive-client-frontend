@@ -7,7 +7,7 @@
     >
       <div v-if="file.isFolder" class="file-list-item-title">
         <i v-if="file.isFolder" class="fas fa-folder file-icon folder-icon" />
-        <nuxt-link v-if="file.isDelete===0" :to="'/?path=' + encodeURI(file.fpath)">
+        <nuxt-link v-if="file.isDelete===0" :to="handlePath()">
           <span class="file-name">{{ file.fname }}</span>
         </nuxt-link>
         <span v-else class="file-name">{{ file.fname }}</span>
@@ -85,6 +85,19 @@ export default {
     },
     showMenu (e) {
       this.$emit('showMenu', e, this.file)
+    },
+    handlePath () {
+      const url = this.$route.path
+      const path = this.file.fpath
+      const sid = this.$route.query.sid
+      const gid = this.$route.query.gid
+      if (sid) {
+        return encodeURI(`${url}?sid=${sid}&path=${path}`)
+      } else if (gid) {
+        return encodeURI(`${url}?gid=${gid}&path=${path}`)
+      } else {
+        return encodeURI(`${url}?path=${path}`)
+      }
     }
   }
 }

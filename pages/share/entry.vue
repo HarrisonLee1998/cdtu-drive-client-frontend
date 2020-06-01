@@ -4,7 +4,7 @@
       请输入该分享的提取码
     </span>
     <el-input v-model="pwd" />
-    <el-button type="success">
+    <el-button type="success" @click="checkShare">
       确认
     </el-button>
   </div>
@@ -16,6 +16,32 @@ export default {
   data () {
     return {
       pwd: ''
+    }
+  },
+  methods: {
+    checkShare () {
+      if (this.pwd.trim().length !== 4) {
+        this.$message.error('提取码不正确,请重新输入')
+        return
+      }
+      const sid = this.$route.query.sid
+      if (sid) {
+        this.$axios.get('/api/share/check', {
+          params: {
+            shareId: sid,
+            pwd: this.pwd
+          }
+        })
+          .then((res) => {
+            if (res.data.status === 'OK') {
+              this.$router.push(encodeURI(`/share/details?sid=${sid}&path=/`))
+            } else {
+              this.$message.error('提取码不正确,请重新输入')
+            }
+          })
+      } else {
+        this.$router.push('/404')
+      }
     }
   }
 }
