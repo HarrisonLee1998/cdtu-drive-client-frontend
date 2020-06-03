@@ -97,7 +97,7 @@ export default {
       showPanel: false,
       types: {
         image: ['gif', 'jpg', 'jpeg', 'png', 'bmp', 'webp'],
-        video: ['mp4', 'm3u8', 'rmvb', 'avi', 'swf', '3gp', 'mkv', 'flv'],
+        video: ['mp4', 'm3u8', 'rmvb', 'avi', 'swf', '3gp', 'mkv', 'flv', 'wmv'],
         audio: ['mp3', 'wav', 'wma', 'ogg', 'aac', 'flac'],
         document: ['doc', 'txt', 'docx', 'pages', 'epub', 'pdf', 'numbers', 'csv', 'xls', 'xlsx', 'keynote', 'ppt', 'pptx', 'md', 'rtf']
       },
@@ -195,6 +195,8 @@ export default {
       data.append('totalSize', file.size)
       data.append('parentFileId', this.parentFileId)
       data.append('filename', file.name)
+      data.append('mime', file.type)
+      data.append('type', this.getType(file))
       const url = '/api/chunk/check'
       await this.$axios.post(url, data).then((res) => {
         const status = res.data.map.status

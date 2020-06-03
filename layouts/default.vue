@@ -132,7 +132,7 @@ export default {
       this.percentage = Math.ceil((user.uss / user.tss) * 100)
     }
     this.$store.subscribe((mutation) => {
-      if (mutation.type === 'file/setUpload') {
+      if (mutation.type === 'file/setRefreshFolder') {
         this.getUser()
       }
     })

@@ -17,7 +17,9 @@
             </el-button>
           </div>
           <div v-if="user">
-            <img src="https://cdn.harrisonlee.net/hl.jpg">
+            <nuxt-link to="/user/details">
+              <img :src="avatarSrc">
+            </nuxt-link>
           </div>
           <div v-if="user" @click="logout">
             <i class="fas fa-sign-out-alt" />
@@ -55,7 +57,8 @@ export default {
       user: null,
       dialog: false,
       id: '',
-      password: ''
+      password: '',
+      avatarSrc: 'https://cdn.harrisonlee.net/hl.jpg'
     }
   },
   created () {
@@ -65,6 +68,7 @@ export default {
       }
     })
     this.user = this.$store.getters['user/getUser']
+    this.avatarSrc = `http://localhost:8080/user/avatar?id=${this.user.id}`
   },
   methods: {
     login () {

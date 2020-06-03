@@ -354,7 +354,10 @@ export default {
       this.hiddenMenu()
       this.clickFile = file
       const x = e.clientX
-      const y = e.clientY
+      let y = e.clientY
+      if (document.body.clientHeight - y < 200) {
+        y = y - 200
+      }
       const menu = this.$refs.contextMenu
       this.clickFileEle = e.path[1]
       this.clickFileEle.setAttribute('id', 'clickFileEle')
@@ -371,7 +374,9 @@ export default {
         this.clickFileEle.removeAttribute('id')
       }
       const menu = this.$refs.contextMenu
-      menu.style.display = 'none'
+      if (menu) {
+        menu.style.display = 'none'
+      }
       window.removeEventListener('mousewheel', this.hiddenMenu)
       window.removeEventListener('click', this.hiddenMenu)
     },
@@ -435,13 +440,13 @@ export default {
       }
       const reg = new RegExp('/')
       if (reg.test(name)) {
-        this.newFolderNameError = '文件夹名称不能包含字符\'/\''
+        this.newFolderNameError = '名称不能包含字符\'/\''
         return false
       }
       const list = this.fileList
       for (let i = 0; i < list.length; ++i) {
         if (list[i].fname === this.newFolderName) {
-          this[errorAttr] = '当前目录下已存在该文件夹'
+          this[errorAttr] = '当前目录下已存在该文件'
           return false
         }
       }
