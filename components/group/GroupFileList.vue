@@ -31,6 +31,11 @@ export default {
     } else {
       this.$router.push('/404')
     }
+    this.$store.subscribe((state, mutation) => {
+      if (mutation.type === 'file/setRefreshFolder') {
+        this.getGroupFiles()
+      }
+    })
   },
   methods: {
     getGroup () {
@@ -47,6 +52,7 @@ export default {
         .then((res) => {
           if (res.data.status === 'OK') {
             this.fileList = res.data.map.file.list
+            this.$store.commit('file/setFile', res.data.map.file)
           }
         })
     },

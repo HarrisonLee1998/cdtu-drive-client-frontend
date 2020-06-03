@@ -4,6 +4,22 @@
       <el-button type="primary" @click="dialog.newGroupDialog = true">
         新建共享
       </el-button>
+      <div>
+        <el-input v-model="id" style="width:100px" />
+        <el-button @click="searchGroup">
+          搜索
+        </el-button>
+      </div>
+    </div>
+    <div class="search-group-result">
+      <div v-show="targetGroup !== undefined && targetGroup.id">
+        {{ targetGroup.title }} <el-button type="primary" @click="joinGroup">
+          申请加入
+        </el-button>
+      </div>
+      <div v-show="targetGroup === undefined">
+        没有id为{{ id }}的共享
+      </div>
     </div>
     <div class="groups">
       <div v-for="group in groups" :key="group.id" class="group">
@@ -73,7 +89,9 @@ export default {
       },
       dialog: {
         newGroupDialog: false
-      }
+      },
+      id: '',
+      targetGroup: {}
     }
   },
   created () {
@@ -111,6 +129,38 @@ export default {
         return false
       }
       return true
+    },
+    searchGroup () {
+      if (this.id.trim() === '') {
+        this.$message.error('id不能为空')
+        return
+      }
+      this.$axios.get('/api/group?gId=' + this.id)
+        .then((res) => {
+          if (res.data.status === 'OK') {
+            this.targetGroup = res.data.map.group
+          } else {
+            this.targetGroup = undefined
+          }
+        })
+    },
+    joinGroup () {
+      for (let i = 0; i < this.groups.length; ++i) {
+        if (this.groups[i].id === this.targetGroup.id) {
+          this.$message.info('您已在当前共享组中')
+          return
+        }
+      }
+      this.$axios.post('/api/group/user', {
+        gId: this.targetGroup.id
+      })
+        .then((res) => {
+          if (res.data.status === 'OK') {
+            this.$message.success('申请提交成功')
+          } else {
+            this.$message.error('申请提交失败')
+          }
+        })
     }
   }
 }
@@ -142,5 +192,9 @@ export default {
       color: #000;
     }
   }
+}
+.btns {
+  display: flex;
+  justify-content: space-between;
 }
 </style>

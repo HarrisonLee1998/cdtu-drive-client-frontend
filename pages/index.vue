@@ -24,7 +24,8 @@ export default {
         folder: true,
         share: true,
         group: true,
-        guType: 0
+        guType: 0,
+        download: true
       }
     }
   },

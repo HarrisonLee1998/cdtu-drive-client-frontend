@@ -31,7 +31,7 @@
     </div>
     <!--文件夹目录信息-->
     <div v-if="!opts.trash" class="path-line">
-      <span class="path"><nuxt-link :to="'/?path=' + encodeURI('/')">全部文件</nuxt-link></span>
+      <span class="path"><nuxt-link :to="handlePathURL('/')">全部文件</nuxt-link></span>
       <span v-for="(path) in paths" :key="path.path" class="path">
         <nuxt-link :to="'/?path=' + encodeURI(path.path)">{{ path.name }}</nuxt-link>
       </span>
@@ -66,11 +66,11 @@
     </div>
     <!--右键菜单-->
     <div ref="contextMenu" class="context-menu">
-      <div class="menu-item-group">
-        <div class="menu-item">
+      <div v-show="opts.download && clickFile && clickFile.isFolder === 0" class="menu-item-group">
+        <!-- <div class="menu-item">
           打开
-        </div>
-        <div class="menu-item">
+        </div> -->
+        <div class="menu-item" @click="download">
           下载
         </div>
       </div>
@@ -92,7 +92,7 @@
         </div>
       </div>
       <div class="menu-item-group">
-        <div class="menu-item" @click="handleRecycle(0)">
+        <div v-show="opts.recycle" class="menu-item" @click="handleRecycle(0)">
           <span v-if="clickFile.isDelete === 0">加入</span>
           <span v-else>移除</span> 回收站
         </div>
@@ -210,6 +210,7 @@
         </span>
       </el-dialog>
     </div>
+    <a id="download" style="display:none;" download />
   </div>
 </template>
 
@@ -240,7 +241,8 @@ export default {
           group: false,
           guType: 2,
           recycle: false,
-          trash: false
+          trash: false,
+          download: false
         }
       }
     }
@@ -598,6 +600,24 @@ export default {
     },
     copyShareInfo () {
       this.$message.info('分享信息已复制到剪切板')
+    },
+    handlePathURL (path) {
+      const url = this.$route.path
+      const sid = this.$route.query.sid
+      const gid = this.$route.query.gid
+      if (sid) {
+        return encodeURI(`${url}?sid=${sid}&path=${path}`)
+      } else if (gid) {
+        return encodeURI(`${url}?gid=${gid}&path=${path}`)
+      } else {
+        return encodeURI(`${url}?path=${path}`)
+      }
+    },
+    download () {
+      const url = 'http://localhost:8080/file/download?id=' + this.clickFile.id
+      const obj = document.getElementById('download')
+      obj.setAttribute('href', url)
+      obj.click()
     }
   }
 }
