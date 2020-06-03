@@ -54,13 +54,12 @@ export default {
           }
         })
         if (res.data.status === 'OK') {
-          this.$message({
-            message: '登录成功',
-            type: 'success'
-          })
+          this.$message.success('登录成功')
           const user = res.data.map.user
           this.$store.commit('user/setUser', user)
           this.$router.push({ path: '/', query: { path: '/' } })
+        } else {
+          this.$message.error('登录信息有误，请重新输入')
         }
       } catch (error) {}
 

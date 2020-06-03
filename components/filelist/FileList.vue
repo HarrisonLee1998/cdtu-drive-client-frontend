@@ -20,7 +20,7 @@
       <el-button v-if="opts.group" type="primary" plain size="medium">
         <i class="fas fa-users" />添加到共享
       </el-button>
-      <el-button type="primary" plain size="medium" @click="handleRecycle(1)">
+      <el-button v-if="opts.recycle" type="primary" plain size="medium" @click="handleRecycle(1)">
         <i class="fas fa-recycle" />
         <span v-if="opts.trash">移除回收站</span>
         <span v-else>加入回收站</span>
@@ -238,7 +238,8 @@ export default {
           folder: false,
           share: false,
           group: false,
-          guType: 0,
+          guType: 2,
+          recycle: false,
           trash: false
         }
       }
