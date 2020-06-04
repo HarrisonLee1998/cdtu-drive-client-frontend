@@ -68,7 +68,9 @@ export default {
       }
     })
     this.user = this.$store.getters['user/getUser']
-    this.avatarSrc = `http://localhost:8080/user/avatar?id=${this.user.id}`
+    if (this.user) {
+      this.avatarSrc = `http://localhost:8080/user/avatar?id=${this.user.id}`
+    }
   },
   methods: {
     login () {

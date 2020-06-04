@@ -25,6 +25,7 @@ export default {
         share: true,
         group: true,
         guType: 0,
+        recycle: true,
         download: true
       }
     }

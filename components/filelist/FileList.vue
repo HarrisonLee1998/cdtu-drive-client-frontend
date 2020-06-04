@@ -17,9 +17,9 @@
         <i class="fas fa-share-alt" />创建分享
       </el-button>
 
-      <el-button v-if="opts.group" type="primary" plain size="medium">
+      <!-- <el-button v-if="opts.group" type="primary" plain size="medium">
         <i class="fas fa-users" />添加到共享
-      </el-button>
+      </el-button> -->
       <el-button v-if="opts.recycle" type="primary" plain size="medium" @click="handleRecycle(1)">
         <i class="fas fa-recycle" />
         <span v-if="opts.trash">移除回收站</span>
@@ -84,10 +84,10 @@
       </div> -->
       <div class="menu-item-group">
         <!--复制到的模式定义为0， 移动到的模式定义为1-->
-        <div class="menu-item" @click="shwoFolderTree(0)">
+        <div class="menu-item" @click="showFolderTree(0)">
           复制到
         </div>
-        <div class="menu-item" @click="shwoFolderTree(1)">
+        <div class="menu-item" @click="showFolderTree(1)">
           移动到
         </div>
       </div>
@@ -359,7 +359,7 @@ export default {
       const x = e.clientX
       let y = e.clientY
       if (document.body.clientHeight - y < 200) {
-        y = y - 200
+        y = y - (200 - (document.body.clientHeight - y))
       }
       const menu = this.$refs.contextMenu
       this.clickFileEle = e.path[1]
@@ -456,7 +456,7 @@ export default {
       return true
     },
     /* 显示目录树 */
-    shwoFolderTree (mode) {
+    showFolderTree (mode) {
       this.targetFile = null
       this.mode = mode
       this.dialog.folderTreeDialog = true

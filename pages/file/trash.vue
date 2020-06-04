@@ -22,6 +22,7 @@ export default {
         share: false,
         group: false,
         guType: 0,
+        recycle: true,
         trash: true
       }
     }

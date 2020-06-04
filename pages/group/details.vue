@@ -182,6 +182,7 @@ export default {
         this.gId = id
         this.path = path
         this.getGroupFiles()
+        this.getFolderTree()
       } else {
         this.$router.push('/404')
       }
@@ -238,6 +239,15 @@ export default {
             this.$router.push('/group')
           } else {
             this.$message.error('删除失败')
+          }
+        })
+    },
+    getFolderTree () {
+      this.$axios.get('/api/file/folder/tree?gId=' + this.gId)
+        .then((res) => {
+          if (res.data.status === 'OK') {
+            this.nodes = []
+            this.nodes.push(res.data.map.nodes)
           }
         })
     }

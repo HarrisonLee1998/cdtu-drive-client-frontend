@@ -3,7 +3,7 @@
     <div class="container">
       <!--按钮-->
       <div>
-        <el-button type="primary">
+        <el-button type="primary" @click="cancelShare">
           <i class="fas fa-ban" />
           取消分享
         </el-button>
@@ -14,6 +14,7 @@
           :data="pageInfo.list"
           border
           style="width: 100%"
+          @selection-change="handleSelection"
         >
           <el-table-column
             type="selection"
@@ -94,7 +95,8 @@ export default {
       pagerCount: 5,
       pageNo: 1,
       pageSize: 10,
-      sortBy: 'create_date'
+      sortBy: 'create_date',
+      select: []
     }
   },
   created () {
@@ -131,6 +133,29 @@ export default {
     go (id) {
       const url = encodeURI(`/share/details?sid=${id}&path=/`)
       this.$router.push(url)
+    },
+    handleSelection (selection) {
+      this.select = []
+      selection.forEach((share) => {
+        this.select.push(share.id)
+      })
+    },
+    cancelShare () {
+      if (this.select.length === 0) {
+        this.$message.error('请先选择所要取消的分享')
+        return
+      }
+      this.$axios.post('/api/share/cancel', {
+        ids: this.select
+      })
+        .then((res) => {
+          if (res.data.status === 'OK') {
+            this.$message.success('操作成功')
+            this.getShare()
+          } else {
+            this.$message.error('操作失败')
+          }
+        })
     }
   }
 }
